@@ -86,9 +86,6 @@ Table publisher as pu {
 
 Table technical_eval as te {
   id int [pk, increment]
-  data_available bool [null]
-  aggregate int [null] // user defined scale
-  notes text [null]
   added datetime [not null, default: `now()`]
   modified datetime [null]
 }
@@ -187,6 +184,48 @@ Table sa_ind {
 
 Ref: sa_ind.sa_id > sa.id [delete: cascade, update: cascade]
 Ref: sa_ind.ind_id > ind.id [delete: cascade, update: cascade]
+
+///// dynamic params //////
+
+// fairly static
+Table field_type as ft {
+  id int [pk]
+  label varchar(256)
+  desc text
+}
+
+// modifiable in settings
+Table field as fd {
+  id int [pk]
+  name varchar(256) [unique]
+  field_id int 
+  label varchar(256)
+  desc text
+  applies_to varchar(256) [note:'media type it applies_to']
+  settings json
+  required boolean
+}
+
+// one field is used by many params
+Ref: ft.id < fd.field_id
+
+Table field_value as fv {
+  param_id int
+  te_id int
+  value json
+  
+  indexes {
+    (param_id, te_id) [unique]
+  }
+}
+
+// one parameter has many instantiations
+Ref: fd.id < fv.param_id
+
+// one technical_eval has many param_values
+Ref: te.id < fv.te_id
+
+//////// enums /////////
 
 Enum result {
   score
