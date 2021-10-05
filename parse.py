@@ -1,4 +1,8 @@
 '''
+Parses a DBML file to output SQLAlchemy models
+'''
+
+'''
 TODO:
 - modify architecture
 - table refs
@@ -8,10 +12,9 @@ TODO:
 - default: functional value
 - references: 1-1, inline references
 - cascade
-- set up commandline script
 
 N.B: 
-- use snake-case for table names
+- use snake_case for table names
 - removed nullable = True from assoc tables
 - skips default: NULL
 - skips autoincrement — lets SQLAlchemy handle...
@@ -21,16 +24,13 @@ from pydbml import PyDBML
 from pathlib import Path
 from textwrap import dedent, indent
 from dataclasses import dataclass
+from argparse import ArgumentParser
 import re
-
-INPUT = 'data/schema.dbml'
-OUTPUT = 'out/models.txt'
+import os
 
 def snake_to_pascal(string):
     '''Convert snake_case to PascaleCase for mapped class identifiers'''
     return ''.join(map(lambda w: w.title(), string.split('_')))
-
-parsed = PyDBML(Path(INPUT))
 
 def setdefaultattr(obj, name, value):
     '''Get attribute if exists, else set to default and get'''
@@ -57,8 +57,6 @@ def embellish_refs(refs):
     '''Add refs to respective column objects'''
     for ref in refs:
         embellish_ref(ref)
-
-embellish_refs(parsed.refs)
 
 def parse_ref(reference):
     match (reference.type):
@@ -220,8 +218,6 @@ def embellish_assoc_references(tables):
         # add reference to first table
         setdefaultattr(table_pair[0], 'links', []).append(Link(table=table_pair[1], assoc_table=assoc_table))
 
-embellish_assoc_references(parsed.tables)
-
 def parse_assoc_relationships(table):
     # assume table.links
     relationship_strs = []
@@ -237,7 +233,6 @@ def parse_relationship(reference):
             return f"{reference.table1.name} = relationship('{ snake_to_pascal(reference.table1.name) }', backref='{ reference.table2.name }s')"
         case '>':
             return f"{reference.table2.name} = relationship('{ snake_to_pascal(reference.table2.name) }', backref='{ reference.table1.name }s')"
-
 
 def parse_relationships(table):
     spaces = ' ' * 4 * 3
@@ -270,10 +265,41 @@ def parse_table(table):
         '''
     )
 
-for table in parsed.tables:
-    # print(parse_table(table))
-    pass
+# INPUT = 'data/schema.dbml'
+OUTPUT = 'out/models.txt'
 
-with open(OUTPUT, 'w') as fd:
-    string = ''.join([ parse_table(table) for table in parsed.tables ])
-    fd.write(re.sub(r'\n{3,}', '\n\n', string))
+if __name__ == '__main__':
+    parser = ArgumentParser(description=__doc__)
+
+    parser.add_argument(
+        '-i', '--input', 
+        dest='input', 
+        required=True,
+        help="Input DBML file",
+        metavar="INPUT",
+    )
+
+    parser.add_argument(
+        '-o', '--output', 
+        dest='output', 
+        required=False,
+        help="Output file",
+        metavar="OUTPUT",
+    )
+
+    args = parser.parse_args()
+
+    if os.path.exists(args.input):
+        with open(args.output or OUTPUT, 'w') as fd:
+            parsed = PyDBML(Path(args.input))
+
+            embellish_refs(parsed.refs)
+            embellish_assoc_references(parsed.tables)
+
+            string = ''.join([ parse_table(table) for table in parsed.tables ])
+            fd.write(re.sub(r'\n{3,}', '\n\n', string))
+
+            print(f'Models generated successfully in {args.output or OUTPUT}')
+    else:
+        print('Input file does not exist')
+
