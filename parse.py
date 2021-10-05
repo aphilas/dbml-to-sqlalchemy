@@ -1,15 +1,36 @@
+'''
+TODO:
+- modify architecture
+- table refs
+- enums
+- indexes: functional indexes, index constraints
+- constraints: composite fk
+- default: functional value
+- references: 1-1, inline references
+- cascade
+- set up commandline script
+
+N.B: 
+- use snake-case for table names
+- removed nullable = True from assoc tables
+- skips default: NULL
+- skips autoincrement — lets SQLAlchemy handle...
+'''
+
 from pydbml import PyDBML
 from pathlib import Path
 from textwrap import dedent, indent
-from enum import Enum
 from dataclasses import dataclass
 import re
+
+INPUT = 'data/schema.dbml'
+OUTPUT = 'out/models.txt'
 
 def snake_to_pascal(string):
     '''Convert snake_case to PascaleCase for mapped class identifiers'''
     return ''.join(map(lambda w: w.title(), string.split('_')))
 
-parsed = PyDBML(Path('schema.dbml'))
+parsed = PyDBML(Path(INPUT))
 
 def setdefaultattr(obj, name, value):
     '''Get attribute if exists, else set to default and get'''
@@ -20,7 +41,7 @@ def setdefaultattr(obj, name, value):
 # embellish columns before generating output
 def embellish_ref(ref):
     '''Add a references attribute to <Column>s from 'global' <Reference>s'''
-    match (ref.type):
+    match(ref.type):
         case '<':
             col_refs = setdefaultattr(ref.col2[0], 'references', [])
             col_refs.append(ref)
@@ -59,8 +80,10 @@ def match_type(type_str):
             return value.capitalize()
         case 'datetime':
             return 'DateTime'
-        case 'bool':
+        case 'bool' | 'boolean':
             return 'Boolean'
+        case 'json':
+            return 'JSON'
         case _:
             return type_str
 
@@ -68,8 +91,6 @@ def parse_type(type_str):
     colsize = r'(\w+)\((\d+)\)'
 
     match type_str:
-        case Enum(typestr):
-            return str(type_str)
         case str(type_str):
             match = re.fullmatch(colsize, type_str)
 
@@ -80,7 +101,7 @@ def parse_type(type_str):
                 return match_type(type_str)
         case _:
             # enums
-            return 'String(128)'
+            return 'String(256)'
 
 def col_settings_name(setting_name):
     map_col_settings = {
@@ -111,9 +132,10 @@ def parse_col_settings(column):
             case 'autoincrement':
                 pass
             case 'nullable':
-                value = not value
-                if value != True:
-                    settings[setting_name] = value
+                # value = not value
+                # if value != True:
+                #     settings[setting_name] = value
+                pass
             case 'primary_key' | 'unique':
                 if value != False:
                     settings[setting_name] = value
@@ -236,19 +258,14 @@ def parse_table(table):
     if (association_table(table)):
         return parse_assoc_table(table)
 
+    # __tablename__ = '{table.name}'
     return dedent(f'''\
         class {snake_to_pascal(table.name)}(Base):
-            __tablename__ = '{table.name}'
-
             { parse_columns(table.columns) }
 
             { parse_relationships(table) }
 
             { '__table_args__ = ' + indexes if indexes else '' }
-            
-            def __repr__(self):
-                label = self.id if hasattr(self, 'id') else ''
-                return f'{{self.__class__.__name__}} {{ label }}'
 
         '''
     )
@@ -257,22 +274,6 @@ for table in parsed.tables:
     # print(parse_table(table))
     pass
 
-with open('models.py', 'w') as fd:
+with open(OUTPUT, 'w') as fd:
     string = ''.join([ parse_table(table) for table in parsed.tables ])
     fd.write(re.sub(r'\n{3,}', '\n\n', string))
-
-# TODO:
-# - modify architecture
-# - table refs
-# - enums
-# - indexes: functional indexes, index constraints
-# - constraints: composite fk
-# - default: functional value
-# - references: 1-1, inline references
-# - cascades
-
-# N.B: 
-# - use snake-case for table names
-# - removed nullable = True from assoc tables
-# - skips default: NULL
-# - skips autoincrement — lets SQLAlchemy handle...

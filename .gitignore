@@ -1,0 +1,7 @@
+.python-version
+.vscode/
+notes
+models.py
+data
+out
+venv
