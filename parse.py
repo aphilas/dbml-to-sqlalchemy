@@ -64,11 +64,16 @@ def embellish_refs(refs):
 
 
 def parse_ref(reference):
+    schema = ""
     match (reference.type):
         case "<":
-            return f"ForeignKey('{ reference.table1.name }.{ reference.col1[0].name }')"
+            if  reference.table1.schema:
+                schema = f"{ reference.table1.schema }."
+            return f"ForeignKey('{schema}{ reference.table1.name }.{ reference.col1[0].name }')"
         case ">":
-            return f"ForeignKey('{ reference.table2.name }.{ reference.col2[0].name }')"
+            if  reference.table2.schema:
+                schema = f"{ reference.table2.schema }."
+            return f"ForeignKey('{schema}{ reference.table2.name }.{ reference.col2[0].name }')"
 
 
 def parse_refs(column):
@@ -381,6 +386,7 @@ def parse_dbml(in_fname):
       in_fname: Inpupt DBML filename
     """
     _parsed = PyDBML(Path(in_fname))
+    dir(_parsed)
     embellish_refs(_parsed.refs)
     embellish_assoc_references(_parsed.tables)
 
