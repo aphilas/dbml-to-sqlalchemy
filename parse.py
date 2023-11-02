@@ -79,7 +79,42 @@ def parse_refs(column):
     )
 
 
+def _match_geometry_type(type_str):
+    """Convert geometry type
+
+    Args:
+      type_str: Geometry type string of tyle geometry(geometry_type, srid),
+                e.g. Geometry(POINT,25832))
+
+    Returns:
+        Geometry type for SQLAlchemy/GeoAlchemy2
+    """
+
+    match = re.match(r"geometry\(([\sa-zA-Z]+),?(.*)\)", type_str)
+
+    try:
+        geo_type = match.group(1).strip()
+        srid = match.group(2).strip()
+    except AttributeError:
+        return type_str
+
+    if not srid:
+        type_str = f"Geometry(geometry_type='{geo_type}')"
+    else:
+        type_str = f"Geometry(geometry_type='{geo_type}', srid={srid})"
+
+    return type_str
+
+
 def match_type(type_str):
+    type_str = _match_geometry_type(type_str)
+
+    # Arrays, e.g. Float[]
+    type_array = re.search(r"([a-zA-Z]{1})([a-zA-Z]+)\[\]", type_str)
+    if type_array:
+        type_str = f"ARRAY({type_array.group(1).upper()}{type_array.group(2)})"
+
+    # simple types
     match type_str:
         case "int" | "integer":
             return "Integer"
@@ -87,12 +122,18 @@ def match_type(type_str):
             return "String"
         case "date" | "time" as value:
             return value.capitalize()
+        case "float" as value:
+            return value.capitalize()
         case "datetime":
             return "DateTime"
+        case "timestamp":
+            return "TIMESTAMP"
         case "bool" | "boolean":
             return "Boolean"
         case "json":
             return "JSON"
+        case "geometry":
+            return "Geometry"
         case _:
             return type_str
 
