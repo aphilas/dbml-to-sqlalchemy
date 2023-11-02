@@ -373,6 +373,20 @@ def parse_table(table):
     return ret
 
 
+def parse_dbml(in_fname):
+    """Parse dbml and return python code
+
+    Args:
+      in_fname: Inpupt DBML filename
+    """
+    _parsed = PyDBML(Path(in_fname))
+    embellish_refs(_parsed.refs)
+    embellish_assoc_references(_parsed.tables)
+
+    string = "".join([parse_table(table) for table in _parsed.tables])
+    return re.sub(r"\n{3,}", "\n\n", string)
+
+
 # INPUT = 'data/schema.dbml'
 OUTPUT = "out/models.txt"
 
@@ -401,14 +415,9 @@ if __name__ == "__main__":
 
     if os.path.exists(args.input):
         with open(args.output or OUTPUT, "w") as fd:
-            parsed = PyDBML(Path(args.input))
+            parsed = parse_dbml(args.input)
 
-            embellish_refs(parsed.refs)
-            embellish_assoc_references(parsed.tables)
-
-            string = "".join([parse_table(table) for table in parsed.tables])
-            fd.write(re.sub(r"\n{3,}", "\n\n", string))
-
+            fd.write(parsed)
             print(f"Models generated successfully in {args.output or OUTPUT}")
     else:
         print("Input file does not exist")
