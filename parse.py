@@ -90,11 +90,12 @@ def _match_geometry_type(type_str):
         Geometry type for SQLAlchemy/GeoAlchemy2
     """
 
-    match = re.match(r"geometry\(([\sa-zA-Z]+),?(.*)\)", type_str)
+    # Remember: No whitespaces allowed in dbml type
+    match = re.match(r"geometry\(([a-zA-Z]+),?(.*)\)", type_str)
 
     try:
-        geo_type = match.group(1).strip()
-        srid = match.group(2).strip()
+        geo_type = match.group(1)
+        srid = match.group(2)
     except AttributeError:
         return type_str
 
