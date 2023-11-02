@@ -246,9 +246,7 @@ def parse_index(index):
 
 def parse_indexes(indexes):
     # add extra comma
-    return (
-        f"""({ ', '.join([*[parse_index(index) for index in indexes], '']) })"""
-    )
+    return f"""{ ', '.join([*[parse_index(index) for index in indexes]]) }"""
 
 
 def all_true(iterable, pred=bool):
@@ -352,18 +350,27 @@ def parse_table(table):
     if association_table(table):
         return parse_assoc_table(table)
 
-    # __tablename__ = '{table.name}'
-    return dedent(
+    table_args = []
+    if indexes:
+        table_args.append(indexes)
+    table_args.append(f"{{'schema' : '{table.schema}'}}")
+
+    ret = dedent(
         f"""\
         class {snake_to_pascal(table.name)}(Base):
+
+            __tablename__ = '{table.name}'
+            __table_args__ = ({', '.join(table_args)})
+
             { parse_columns(table.columns) }
 
             { parse_relationships(table) }
 
-            { '__table_args__ = ' + indexes if indexes else '' }
 
         """
     )
+
+    return ret
 
 
 # INPUT = 'data/schema.dbml'
