@@ -408,6 +408,25 @@ def parse_dbml(in_fname):
     embellish_refs(_parsed.refs)
     embellish_assoc_references(_parsed.tables)
 
+    string = ''.join([parse_table(table) for table in _parsed.tables])
+    return re.sub(r'\n{3,}', '\n\n', string)
+
+
+# INPUT = 'data/schema.dbml'
+OUTPUT = 'out/models.txt'
+
+
+def parse_dbml(in_fname):
+    """Parse dbml and return python code
+
+    Args:
+      in_fname: Inpupt DBML filename
+    """
+    _parsed = PyDBML(Path(in_fname))
+    dir(_parsed)
+    embellish_refs(_parsed.refs)
+    embellish_assoc_references(_parsed.tables)
+
     string = "".join([parse_table(table) for table in _parsed.tables])
     return re.sub(r"\n{3,}", "\n\n", string)
 
@@ -419,30 +438,30 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=__doc__)
 
     parser.add_argument(
-        "-i",
-        "--input",
-        dest="input",
+        '-i',
+        '--input',
+        dest='input',
         required=True,
-        help="Input DBML file",
-        metavar="INPUT",
+        help='Input DBML file',
+        metavar='INPUT',
     )
 
     parser.add_argument(
-        "-o",
-        "--output",
-        dest="output",
+        '-o',
+        '--output',
+        dest='output',
         required=False,
-        help="Output file",
-        metavar="OUTPUT",
+        help='Output file',
+        metavar='OUTPUT',
     )
 
     args = parser.parse_args()
 
     if os.path.exists(args.input):
-        with open(args.output or OUTPUT, "w") as fd:
+        with open(args.output or OUTPUT, 'w') as fd:
             parsed = parse_dbml(args.input)
 
             fd.write(parsed)
-            print(f"Models generated successfully in {args.output or OUTPUT}")
+            print(f'Models generated successfully in {args.output or OUTPUT}')
     else:
-        print("Input file does not exist")
+        print('Input file does not exist')
