@@ -416,26 +416,7 @@ def parse_dbml(in_fname):
 # INPUT = 'data/schema.dbml'
 OUTPUT = 'out/models.txt'
 
-
-def parse_dbml(in_fname):
-    """Parse dbml and return python code
-
-    Args:
-      in_fname: Inpupt DBML filename
-    """
-    _parsed = PyDBML(Path(in_fname))
-    dir(_parsed)
-    embellish_refs(_parsed.refs)
-    embellish_assoc_references(_parsed.tables)
-
-    string = "".join([parse_table(table) for table in _parsed.tables])
-    return re.sub(r"\n{3,}", "\n\n", string)
-
-
-# INPUT = 'data/schema.dbml'
-OUTPUT = "out/models.txt"
-
-if __name__ == "__main__":
+def main():
     parser = ArgumentParser(description=__doc__)
 
     parser.add_argument(
@@ -466,3 +447,6 @@ if __name__ == "__main__":
             print(f'Models generated successfully in {args.output or OUTPUT}')
     else:
         print('Input file does not exist')
+
+if __name__ == '__main__':
+    main()
