@@ -68,21 +68,22 @@ def parse_ref(reference):
     schema = ""
     match (reference.type):
         case "<":
-            if  reference.table1.schema:
+            if reference.table1.schema:
                 schema = f"{ reference.table1.schema }."
             return f"ForeignKey('{schema}{ reference.table1.name }.{ reference.col1[0].name }')"
         case ">":
-            if  reference.table2.schema:
+            if reference.table2.schema:
                 schema = f"{ reference.table2.schema }."
             return f"ForeignKey('{schema}{ reference.table2.name }.{ reference.col2[0].name }')"
 
 
 def parse_refs(column):
     return (
-        ', '.join([parse_ref(reference) for reference in column.references])
+        ", ".join([parse_ref(reference) for reference in column.references])
         if hasattr(column, "references")
         else None
     )
+
 
 def _match_geometry_type(type_str):
     """Convert geometry type
@@ -128,18 +129,18 @@ def match_type(type_str):
             return "String"
         case "date" | "time" as value:
             return value.capitalize()
-        case 'float' as value:
+        case "float" as value:
             return value.capitalize()
-        case 'datetime':
-            return 'DateTime'
-        case 'timestamp' | 'char' as value:
+        case "datetime":
+            return "DateTime"
+        case "timestamp" | "char" as value:
             return value.upper()
-        case 'bool' | 'boolean':
-            return 'Boolean'
-        case 'json':
-            return 'JSON'
-        case 'geometry':
-            return 'Geometry'
+        case "bool" | "boolean":
+            return "Boolean"
+        case "json":
+            return "JSON"
+        case "geometry":
+            return "Geometry"
         case _:
             return type_str
 
@@ -192,19 +193,19 @@ def parse_col_settings(column):
 
     for prop, value in vars(column).items():
         match setting_name := col_settings_name(prop):
-            case 'autoincrement':
+            case "autoincrement":
                 if value:
                     autoincrement = True
-            case 'nullable':
+            case "nullable":
                 # value = not value
                 # if value != True:
                 #     settings[setting_name] = value
                 pass
-            case 'primary_key':
+            case "primary_key":
                 if value != False:
                     settings[setting_name] = value
                     primary_key = value
-            case 'unique':
+            case "unique":
                 if value != False:
                     settings[setting_name] = value
             case "default":
@@ -219,15 +220,15 @@ def parse_col_settings(column):
     # Workaround for SQLAlchemey, which only support autoincrements on primary key
     # columns
     settings_list = []
-    
+
     # Non-keywoard arguments at the beginngin
     if autoincrement and not primary_key:
-        settings_list.append('Identity()')
+        settings_list.append("Identity()")
 
     for prop, value in settings.items():
-        settings_list.append(f'{prop}={value}')
+        settings_list.append(f"{prop}={value}")
 
-    return ', '.join(settings_list)
+    return ", ".join(settings_list)
 
 
 def parse_column_rhs(column):
@@ -409,44 +410,46 @@ def parse_dbml(in_fname):
     embellish_refs(_parsed.refs)
     embellish_assoc_references(_parsed.tables)
 
-    string = ''.join([parse_table(table) for table in _parsed.tables])
-    return re.sub(r'\n{3,}', '\n\n', string)
+    string = "".join([parse_table(table) for table in _parsed.tables])
+    return re.sub(r"\n{3,}", "\n\n", string)
 
 
 # INPUT = 'data/schema.dbml'
-OUTPUT = 'out/models.txt'
+OUTPUT = "out/models.txt"
+
 
 def main():
     parser = ArgumentParser(description=__doc__)
 
     parser.add_argument(
-        '-i',
-        '--input',
-        dest='input',
+        "-i",
+        "--input",
+        dest="input",
         required=True,
-        help='Input DBML file',
-        metavar='INPUT',
+        help="Input DBML file",
+        metavar="INPUT",
     )
 
     parser.add_argument(
-        '-o',
-        '--output',
-        dest='output',
+        "-o",
+        "--output",
+        dest="output",
         required=False,
-        help='Output file',
-        metavar='OUTPUT',
+        help="Output file",
+        metavar="OUTPUT",
     )
 
     args = parser.parse_args()
 
     if os.path.exists(args.input):
-        with open(args.output or OUTPUT, 'w') as fd:
+        with open(args.output or OUTPUT, "w") as fd:
             parsed = parse_dbml(args.input)
 
             fd.write(parsed)
-            print(f'Models generated successfully in {args.output or OUTPUT}')
+            print(f"Models generated successfully in {args.output or OUTPUT}")
     else:
-        print('Input file does not exist')
+        print("Input file does not exist")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
