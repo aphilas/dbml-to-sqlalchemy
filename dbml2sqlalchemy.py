@@ -78,11 +78,10 @@ def parse_ref(reference):
 
 def parse_refs(column):
     return (
-        ", ".join([parse_ref(reference) for reference in column.references])
+        ', '.join([parse_ref(reference) for reference in column.references])
         if hasattr(column, "references")
         else None
     )
-
 
 def _match_geometry_type(type_str):
     """Convert geometry type
@@ -128,18 +127,18 @@ def match_type(type_str):
             return "String"
         case "date" | "time" as value:
             return value.capitalize()
-        case "float" as value:
+        case 'float' as value:
             return value.capitalize()
-        case "datetime":
-            return "DateTime"
-        case "timestamp":
-            return "TIMESTAMP"
-        case "bool" | "boolean":
-            return "Boolean"
-        case "json":
-            return "JSON"
-        case "geometry":
-            return "Geometry"
+        case 'datetime':
+            return 'DateTime'
+        case 'timestamp' | 'char' as value:
+            return value.upper()
+        case 'bool' | 'boolean':
+            return 'Boolean'
+        case 'json':
+            return 'JSON'
+        case 'geometry':
+            return 'Geometry'
         case _:
             return type_str
 
