@@ -1,3 +1,4 @@
+# Original code from https://github.com/nevilleomangi/dbml-to-sqlalchemy
 """
 Parses a DBML file to output SQLAlchemy models
 """
