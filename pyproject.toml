@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=46", "wheel", "setuptools_scm[toml]>=3.4"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+markers = "ci_skip: tests to be skipped in ci pipeline"
+addopts = "--doctest-modules --ignore-glob='**/_*.py'"
+doctest_optionflags = "NORMALIZE_WHITESPACE"
+testpaths = [
+    "tests"
+]
+
+[tool.black]
+line-length = 80
