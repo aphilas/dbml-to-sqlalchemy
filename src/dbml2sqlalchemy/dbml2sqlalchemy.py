@@ -1,9 +1,7 @@
 # Original code from https://github.com/nevilleomangi/dbml-to-sqlalchemy
 """
 Parses a DBML file to output SQLAlchemy models
-"""
 
-"""
 TODO:
 - modify architecture
 - table refs
@@ -20,15 +18,13 @@ N.B:
 - skips default: NULL
 - skips autoincrement — lets SQLAlchemy handle...
 """
-
-from pydbml import PyDBML
+import os
+import re
 from pathlib import Path
 from textwrap import dedent, indent
 from dataclasses import dataclass
 from argparse import ArgumentParser
-import re
-import os
-
+from pydbml import PyDBML
 
 def snake_to_pascal(string):
     """Convert snake_case to PascaleCase for mapped class identifiers"""
@@ -173,7 +169,7 @@ def col_settings_name(setting_name):
 
 
 def parse_default(default_str):
-    if default_str == None:
+    if default_str is None:
         return None
 
     match default_str:
@@ -202,11 +198,11 @@ def parse_col_settings(column):
                 #     settings[setting_name] = value
                 pass
             case "primary_key":
-                if value != False:
+                if value is not False:
                     settings[setting_name] = value
                     primary_key = value
             case "unique":
-                if value != False:
+                if value is not False:
                     settings[setting_name] = value
             case "default":
                 default = parse_default(value)
@@ -370,7 +366,7 @@ def parse_relationships(table):
 
 
 def parse_table(table):
-    nl = "\n"
+
     indexes = parse_indexes(table.indexes) if len(table.indexes) > 0 else ""
 
     if association_table(table):
@@ -405,12 +401,12 @@ def parse_dbml(in_fname):
     Args:
       in_fname: Inpupt DBML filename
     """
-    _parsed = PyDBML(Path(in_fname))
-    dir(_parsed)
-    embellish_refs(_parsed.refs)
-    embellish_assoc_references(_parsed.tables)
+    parsed = PyDBML(Path(in_fname))
+    dir(parsed)
+    embellish_refs(parsed.refs)
+    embellish_assoc_references(parsed.tables)
 
-    string = "".join([parse_table(table) for table in _parsed.tables])
+    string = "".join([parse_table(table) for table in parsed.tables])
     return re.sub(r"\n{3,}", "\n\n", string)
 
 
