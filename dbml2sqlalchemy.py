@@ -186,16 +186,24 @@ def parse_default(default_str):
 def parse_col_settings(column):
     settings = {}
 
+    autoincrement = False
+    primary_key = False
+
     for prop, value in vars(column).items():
         match setting_name := col_settings_name(prop):
-            case "autoincrement":
-                pass
-            case "nullable":
+            case 'autoincrement':
+                if value:
+                    autoincrement = True
+            case 'nullable':
                 # value = not value
                 # if value != True:
                 #     settings[setting_name] = value
                 pass
-            case "primary_key" | "unique":
+            case 'primary_key':
+                if value != False:
+                    settings[setting_name] = value
+                    primary_key = value
+            case 'unique':
                 if value != False:
                     settings[setting_name] = value
             case "default":
@@ -207,7 +215,18 @@ def parse_col_settings(column):
                 elif default:
                     settings[setting_name] = default
 
-    return ", ".join([f"{prop}={value}" for prop, value in settings.items()])
+    # Workaround for SQLAlchemey, which only support autoincrements on primary key
+    # columns
+    settings_list = []
+    
+    # Non-keywoard arguments at the beginngin
+    if autoincrement and not primary_key:
+        settings_list.append('Identity()')
+
+    for prop, value in settings.items():
+        settings_list.append(f'{prop}={value}')
+
+    return ', '.join(settings_list)
 
 
 def parse_column_rhs(column):
